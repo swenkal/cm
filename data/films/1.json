@@ -1,0 +1,13 @@
+{
+  "Pulp Fiction": {
+    "director": "Quentin Tarantino",
+    "launch-date": "14.10.1994",
+    "duration": 2.34,
+    "categories": [
+      "crime", "action", "drama"
+    ],
+    "actors": [
+      "1", "2", "3"
+    ]
+  }
+}

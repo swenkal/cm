@@ -1,0 +1,13 @@
+{
+  "Bladerunner": {
+    "director": "Ridley Scott",
+    "launch-date": "25.06.1982",
+    "duration": 1.57,
+    "categories": [
+      "fantasy", "action", "sci-fi", "thriller"
+    ],
+    "actors": [
+      "1", "2", "3"
+    ]
+  }
+}

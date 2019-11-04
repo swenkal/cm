@@ -1,0 +1,13 @@
+{
+  "StarWars. Episode 5: Empire Strikes Back": {
+    "director": "Irvin Kershner",
+    "launch-date": "17.05.1980",
+    "duration": 2.7,
+    "categories": [
+      "fantasy", "adventure", "science-fiction"
+    ],
+    "actors": [
+      "1", "2", "3"
+    ]
+  }
+}
