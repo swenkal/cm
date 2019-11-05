@@ -5,13 +5,13 @@ const MAX_STOCK_PRICE = 0;
 const MAX_LOSE_YEAR = 0;
 const MAX_LOSE_MONTH = 0;
 
-let artists = [
-  require("./data/artists/1.json"), require("./data/artists/2.json"), require("./data/artists/3.json")
-];
+let arr = [];
+let arr2 = [];
+arr[0] = require("./data/films/1.json");
+arr[1] = require("./data/films/2.json");
+arr[2] = require("./data/films/3.json");
+arr2[0] = require("./data/artists/1.json");
+arr2[1] = require("./data/artists/2.json");
+arr2[2] = require("./data/artists/3.json");
 
-let films = [
-  require("./data/films/1.json"), require("./data/films/2.json"), require("./data/films/3.json")
-];
-
-
-console.log(films[0]["director"]);
+console.log(`Movie:`, arr[2]["title"], `- one of the main actors:`, arr2[0]["name"]);
