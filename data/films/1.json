@@ -1,5 +1,5 @@
 {
-  "Pulp Fiction": {
+    "name": "Pulp Fiction",
     "director": "Quentin Tarantino",
     "launch-date": "14.10.1994",
     "duration": 2.34,
@@ -9,5 +9,4 @@
     "actors": [
       "1", "2", "3"
     ]
-  }
 }
