@@ -26,12 +26,11 @@ function loadData() {
   return {films, artists};
 }
 
-function saveData(loadData) {
-  let loadedData = loadData();
-  fs.writeFile('data.json', JSON.stringify(loadedData), (e) => {
+function saveData(films, artists) {
+  fs.writeFile('data.json', JSON.stringify(films, artists), (e) => {
     if (e) throw err;
     console.log('The file has been saved!');
   });
 }
-
-saveData(loadData);
+let loadedData = loadData();
+saveData(loadedData);
