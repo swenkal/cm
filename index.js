@@ -5,30 +5,31 @@ const MAX_STOCK_PRICE = 0;
 const MAX_LOSE_YEAR = 0;
 const MAX_LOSE_MONTH = 0;
 
-let movies = [];
-let artists = [];
 let fs = require('fs');
 
+let films_names;
+let artists_names;
+
 try {
-  films = fs.readdirSync("./data/films");
-  artists = fs.readdirSync("./data/artists");
+  films_names = fs.readdirSync("./data/films");
+  artists_names = fs.readdirSync("./data/artists");
   console.log(films, artists);
 } catch (e) {
   console.log("Проблемки-фемки");
 }
 
-for (let filename of films) {
-  let allax1 = JSON.parse(fs.readFileSync(`./data/films/${filename}`));
-  movies.push(allax1);
+let films = [];
+let artists = [];
+
+for (let filename of films_names) {
+  let film = JSON.parse(fs.readFileSync(`./data/films/${filename}`));
+  films.push(film);
 }
 
-for (filename of artists) {
-  let allax2 = JSON.parse(fs.readFileSync(`./data/artists/${filename}`));
-  artists.push(allax2);
+for (filename of artists_names) {
+  let artist = JSON.parse(fs.readFileSync(`./data/artists/${filename}`));
+  artists.push(artist);
 }
-
-// console.log(`Movie:`, arr[2]["title"], `- one of the main actors:`, arr2[0]["name"]);
-//console.log(JSON.stringify(arr), JSON.stringify(arr2));
 
 fs.writeFile('data.json', JSON.stringify({movies, artists}), (e) => {
   if (e) throw err;
