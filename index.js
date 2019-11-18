@@ -1,20 +1,5 @@
 let fs = require('fs');
 
-const http = require('http')
-const port = 3000
-const requestHandler = (request, response) => {
-    console.log(request.url)
-    response.end(fs.readFileSync(`./index.html/`))
-}
-
-const server = http.createServer(requestHandler)
-
-server.listen(port, (err) => {
-    if (err) {
-        return console.log('something bad happened', err)
-    }    console.log(`server is listening on ${port}`)
-})
-
 function loadData() {
 
   let films_names;
@@ -40,6 +25,16 @@ function loadData() {
   }
   return {films, artists};
 }
+
+const http = require('http');
+const port = 3000;
+const requestHandler = (request, response) => {
+    console.log(request.url);
+    let fileContent = fs.readdirSync(`./web/`);
+    response.setHeader('Content-Type', ['text/html; charset=utf-8;']);
+    response.end(fileContent);
+}
+
 /*
 function saveData(films, artists) {
   fs.writeFile('data.json', JSON.stringify({films, artists}), (e) => {
@@ -49,3 +44,11 @@ function saveData(films, artists) {
 }*/
 // let loadedData = loadData();
 // saveData(loadedData.films, loadedData.artists);
+
+const server = http.createServer(requestHandler)
+
+server.listen(port, (err) => {
+    if (err) {
+        return console.log('something bad happened', err)
+    }    console.log(`server is listening on ${port}`)
+})
