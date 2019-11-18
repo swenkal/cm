@@ -29,9 +29,9 @@ function loadData() {
 const http = require('http');
 const port = 3000;
 const requestHandler = (request, response) => {
-    let requestedFile = request.url;
+    let requestedFile = decodeURI(request.url);
     response.setHeader('Content-Type', 'text/html; charset=utf-8;');
-    console.log(decodeURI(requestedFile));
+    console.log(requestedFile);
     try {
       let fileContent = fs.readFileSync(`./web${requestedFile}`);
       response.statusCode = 200;
