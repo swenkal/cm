@@ -30,7 +30,7 @@ const http = require('http');
 const port = 3000;
 const requestHandler = (request, response) => {
     console.log(request.url);
-    let fileContent = fs.readFileSync(`./web/index${1,2}.html`);
+    let fileContent = fs.readFileSync(`./web/index1.html`);
     response.setHeader('Content-Type', 'text/html; charset=utf-8;');
     response.end(fileContent);
 }
