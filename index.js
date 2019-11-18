@@ -30,13 +30,15 @@ const http = require('http');
 const port = 3000;
 const requestHandler = (request, response) => {
     let requestedFile = request.url;
+    response.setHeader('Content-Type', 'text/html; charset=utf-8;');
+    console.log(decodeURI(requestedFile));
     try {
       let fileContent = fs.readFileSync(`./web${requestedFile}`);
-      console.log(requestedFile);
-      response.setHeader('Content-Type', 'text/html; charset=utf-8;');
+      response.statusCode = 200;
       response.end(fileContent);
     } catch (e) {
-      console.log(`Запрашиваемого файла не существует`);
+      response.statusCode = 404;
+      response.end(`Запрашиваемого файла не существует`);
     }
 }
 
