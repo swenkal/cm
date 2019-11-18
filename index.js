@@ -31,7 +31,7 @@ const port = 3000;
 const requestHandler = (request, response) => {
     console.log(request.url);
     let fileContent = fs.readdirSync(`./web/`);
-    response.setHeader('Content-Type', ['text/html; charset=utf-8;']);
+    response.setHeader('Content-Type', 'text/html; charset=utf-8;');
     response.end(fileContent);
 }
 
