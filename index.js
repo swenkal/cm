@@ -1,3 +1,18 @@
+const http = require('http')
+const port = 3000
+const requestHandler = (request, response) => {
+    console.log(request.url)
+    response.end('Hello World')
+}
+
+const server = http.createServer(requestHandler)
+
+server.listen(port, (err) => {
+    if (err) {
+        return console.log('something bad happened', err)
+    }    console.log(`server is listening on ${port}`)
+})
+
 let fs = require('fs');
 
 function loadData() {
@@ -25,12 +40,12 @@ function loadData() {
   }
   return {films, artists};
 }
-
+/*
 function saveData(films, artists) {
-  fs.writeFile('data.json', JSON.stringify(films, artists), (e) => {
+  fs.writeFile('data.json', JSON.stringify({films, artists}), (e) => {
     if (e) throw err;
     console.log('The file has been saved!');
   });
-}
-let loadedData = loadData();
-saveData(loadedData);
+}*/
+// let loadedData = loadData();
+// saveData(loadedData.films, loadedData.artists);
