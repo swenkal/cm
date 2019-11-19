@@ -44,10 +44,21 @@ const requestHandler = (request, response) => {
     console.log(requestedFile);
     try {
       response.setHeader('Content-Type', `${contentType}`);
-      let fileContent = fs.readFileSync(`./web${requestedFile}`);
+    //  let fileContent = fs.readFileSync(`./web${requestedFile}`);
+      let readStream = new fs.ReadStream(`./web${requestedFile}`);
+      readStream.pipe(response);
+      readStream.on('error', (err) => {
+        response.setHeader('Content-Type', 'text/html; charset=utf-8;');
+        response.statusCode = 500;
+        response.end("Server Error");
+        console.error(err);
+      });
+      response.on('close', () => {
+        file.destroy();
+      });
       response.statusCode = 200;
-      response.end(fileContent);
     } catch (e) {
+      console.log(e.message);
       response.setHeader('Content-Type', 'text/html; charset=utf-8;');
       response.statusCode = 404;
       response.end('Запрашиваемого файла не существует');
