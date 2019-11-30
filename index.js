@@ -1,60 +1,66 @@
 let fs = require('fs');
 
 function loadData() {
-
-  let films_names;
-  let artists_names;
-  let films = [];
-  let artists = [];
-
+  const PATH_TO_FILMS = "./data/films/";
+  const PATH_TO_ARTISTS = "./data/artists/";
+  let filmNames;
+  let artistNames;
   try {
-    films_names = fs.readdirSync("./data/films");
-    artists_names = fs.readdirSync("./data/artists");
-    console.log(films_names, artists_names);
+    filmNames = fs.readdirSync(PATH_TO_FILMS);
+    artistNames = fs.readdirSync(PATH_TO_ARTISTS);
+    console.log(filmNames, artistNames);
   } catch (e) {
     console.log("Проблемки");
   }
-
-  for (let filename of films_names) {
-    let film = JSON.parse(fs.readFileSync(`./data/films/${filename}`));
-    films.push(film);
-  }
-  for (filename of artists_names) {
-    let artist = JSON.parse(fs.readFileSync(`./data/artists/${filename}`));
-    artists.push(artist);
-  }
-  return {films, artists};
+  let filmInstances = getInstances(filmNames, PATH_TO_FILMS);
+  let artistInstances = getInstances(artistNames, PATH_TO_ARTISTS);
+  return {filmInstances, artistInstances};
 }
+function getInstances(arrayNames, pathToDir) {
+  let arrayInstances = [];
+  for (let instanceName of arrayNames) {
+    let instanceContent = JSON.parse(fs.readFileSync(pathToDir + `${instanceName}`));
+    arrayInstances.push(instanceContent);
+  }
+  return arrayInstances;
+}
+
 const mimeTypes = require('./config/mimeTypes.json');
 
 const http = require('http');
 const port = 3000;
 const requestHandler = (request, response) => {
-    let requestedFile = decodeURI(request.url);
-    if (requestedFile.slice(-1) === '/') {
+
+  let requestedFile = decodeURI(request.url);
+  if (requestedFile.slice(-1) === '/') {
       requestedFile += 'index.html';
     }
-    let fileExtension = requestedFile.split('.').pop();
+
+    const delimeteredFileName = requestedFile.split('.');
+    const fileExtension = delimeteredFileName[delimeteredFileName.length-1];
+
     let contentType = 'application/octet-stream';
     if (typeof mimeTypes[fileExtension] !== 'undefined') {
       contentType = mimeTypes[fileExtension];
     }
     console.log(fileExtension);
-
     console.log(requestedFile);
+    if(businessLogicHandler(request, response))  return;
     try {
+      let fileSizeInBytes = fs.statSync(`./web${requestedFile}`)['size'];
+      response.setHeader('Content-Length', `${fileSizeInBytes}`);
       response.setHeader('Content-Type', `${contentType}`);
     //  let fileContent = fs.readFileSync(`./web${requestedFile}`);
-      let readStream = new fs.ReadStream(`./web${requestedFile}`);
-      readStream.pipe(response);
-      readStream.on('error', (err) => {
+      let contentRequestedFile = new fs.ReadStream(`./web${requestedFile}`);
+      contentRequestedFile.pipe(response);
+      contentRequestedFile.on('error', (err) => {
         response.setHeader('Content-Type', 'text/html; charset=utf-8;');
         response.statusCode = 500;
         response.end("Server Error");
         console.error(err);
       });
       response.on('close', () => {
-        file.destroy();
+        contentRequestedFile.destroy();
       });
       response.statusCode = 200;
     } catch (e) {
@@ -65,18 +71,22 @@ const requestHandler = (request, response) => {
     }
 }
 
+function businessLogicHandler(request, response){
+  console.log(request);
+  return false;
+}
+
 /*
 function saveData(films, artists) {
   fs.writeFile('data.json', JSON.stringify({films, artists}), (e) => {
     if (e) throw err;
     console.log('The file has been saved!');
   });
-}*/
-// let loadedData = loadData();
-// saveData(loadedData.films, loadedData.artists);
+}
+ let loadedData = loadData();
+  saveData(loadedData.filmInstances, loadedData.artistInstances);*/
 
 const server = http.createServer(requestHandler);
-
 server.listen(port, (err) => {
     if (err) {
         return console.log('something bad happened', err);
