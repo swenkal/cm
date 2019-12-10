@@ -72,10 +72,62 @@ const requestHandler = (request, response) => {
 }
 
 function businessLogicHandler(request, response){
-  console.log(request);
-  return false;
+
+  let requestedUrl = decodeURI(request.url);
+  let router = {
+    "\^/api$" : () => indexApiHandler(response),
+    "\^/api/auth" : () => authorisation(request, response)
+  };
+  for(key in router) {
+    let apiRegExp = new RegExp(key, "g");
+    if(apiRegExp.test(requestedUrl)) return router[key]();
+  }
+    return false;
 }
 
+function indexApiHandler(response){
+  response.setHeader('Content-Type', 'application/json;');
+  response.statusCode = 200;
+  let indexApiResult = { result: null };
+  response.end(JSON.stringify(indexApiResult));
+  return true;
+}
+
+function authorisation(request, response) {
+  let requestedUrl = decodeURI(request.url);
+    const PATH_TO_PROFILES = "./data/profiles/";
+    let requestParams = getRequestParams(requestedUrl);
+    let resultCheckUser = {
+        authed: false
+    };
+    fs.readFile(`${PATH_TO_PROFILES}${requestParams.login}.json`,'utf-8', function(err, data){
+      response.setHeader("Content-Type", "application/json");
+      if (err) {
+        response.statusCode = 401;
+      } else {
+          let userDataObject = JSON.parse(data);
+          if(userDataObject.account.password == requestParams.password){
+            response.statusCode = 200;
+            resultCheckUser.authed = true;
+          } else {
+            response.statusCode = 401;
+          }
+      }
+      response.end(JSON.stringify(resultCheckUser));
+    });
+    return true;
+}
+
+function getRequestParams(url) {
+  let resultParams = {}
+  let [adress, stringParams] = url.split("?");
+  if (stringParams)
+    for (let keyValue of stringParams.split("&")) {
+      let [key, value] = keyValue.split("=");
+      resultParams[key] = value;
+  }
+  return resultParams;
+}
 /*
 function saveData(films, artists) {
   fs.writeFile('data.json', JSON.stringify({films, artists}), (e) => {
