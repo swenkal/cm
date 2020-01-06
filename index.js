@@ -1,4 +1,7 @@
 let fs = require('fs');
+const mimeTypes = require('./config/mimeTypes.json');
+const PATH_TO_SESSIONS = "./data/sessions/";
+const TWO_DAYS_IN_MS = 172800000; //172800000 = 2 day * 24 hour * 60 min * 60 s * 1000 ms
 
 function loadData() {
   const PATH_TO_FILMS = "./data/films/";
@@ -25,7 +28,7 @@ function getInstances(arrayNames, pathToDir) {
   return arrayInstances;
 }
 
-const mimeTypes = require('./config/mimeTypes.json');
+
 
 const http = require('http');
 const port = 3000;
@@ -106,9 +109,6 @@ function getSessionContext(request){
   let userCookie = parseCookie(request.headers.cookie);
   let resultContext = {};
   if(userCookie['token'] == 'undefined' || typeof userCookie['token'] !== 'string') return resultContext;
-
-  const PATH_TO_SESSIONS = "./data/sessions/";
-  const TWO_DAYS_IN_MS = 172800000; // 2 day * 24 hour * 60 min * 60 s * 1000 ms
 
   try {
     let tokenContent = JSON.parse(fs.readFileSync(`${PATH_TO_SESSIONS}${userCookie['token']}.json`));
@@ -194,6 +194,13 @@ function authorisation(request, response, postData, sessionContext) {
       response.end(JSON.stringify(resultCheckUser));
       return;
     }
+    console.log(request.headers.cookie);
+    if(request.headers.cookie !== undefined){
+      response.statusCode = 403;
+      response.setHeader("Content-Type", "application/json");
+      response.end(JSON.stringify(resultCheckUser));
+      return;
+    }
 
     fs.readFile(`${PATH_TO_PROFILES}${postData.login}.json`,'utf-8', function(err, data){
       response.setHeader("Content-Type", "application/json");
@@ -222,19 +229,18 @@ function parseCookie(cookieString){
 }
 
 function generateSession(response, postData){
-  const PATH_TO_SESSIONS = "./data/sessions/";
-  const TWO_DAYS_IN_MS = 172800000; // 2 day * 24 hour * 60 min * 60 s * 1000 ms
   let sessionCreateTime = Date.now();
   let sessionЕxpiresTime = sessionCreateTime + TWO_DAYS_IN_MS;
   let cookieLifeTime = new Date(sessionЕxpiresTime).toGMTString();
   let userToken = generateRandomString();
+  let dirForUserToken = getDirNameForSessionToken(userToken);
 
   let sessionData = {};
   sessionData.login = postData.login;
   sessionData.createTime = sessionCreateTime;
   sessionData.expiresTime = sessionЕxpiresTime;
   try{
-    fs.writeFileSync(`${PATH_TO_SESSIONS}${userToken}.json`, JSON.stringify(sessionData));
+    fs.writeFileSync(`${PATH_TO_SESSIONS}${dirForUserToken}${userToken}.json`, JSON.stringify(sessionData));
     response.statusCode = 200;
     response.setHeader("Set-Cookie", `token=${userToken}; expires=${cookieLifeTime}`);
     return true;
@@ -245,6 +251,20 @@ function generateSession(response, postData){
   }
 }
 
+function getDirNameForSessionToken(userToken){
+  let dirName = `${userToken.substr(0,2)}/`;
+  if(!(fs.existsSync(`${PATH_TO_SESSIONS}${dirName}`))){
+    try{
+      fs.mkdirSync(`${PATH_TO_SESSIONS}${dirName}`);
+      console.log(`Dir ${dirName} was created!`);
+    } catch(err){
+      console.error(`Error with create dir ${dirName}: ${err}`);
+    }
+  }
+  return dirName;
+}
+
+
 function generateRandomString(length){
    let lengthString = length || 16;
    let resultString = '';
@@ -254,6 +274,50 @@ function generateRandomString(length){
      resultString += String.fromCharCode(randNum + (randNum < 10 ? 48 : randNum < 36 ? 55 : 61))
    }
    return resultString;
+}
+
+let checkingSessionDirs = false;
+setInterval(() => {
+  if(checkingSessionDirs) return;
+  checkSessionDirs()}, 40000);
+
+function checkSessionDirs(){
+  checkingSessionDirs = true;
+  let sessionDirNames = fs.readdirSync(PATH_TO_SESSIONS);
+  console.log(sessionDirNames);
+  for (let currentSessionDir of sessionDirNames){
+      deleteOldSessionFiles(`${PATH_TO_SESSIONS}${currentSessionDir}/`);
+      deleteEmptySessionDir(`${PATH_TO_SESSIONS}${currentSessionDir}/`);
+  }
+  checkingSessionDirs = false;
+}
+
+function deleteOldSessionFiles(pathToSessionDir) {
+  const PATH_TO_SESSION_DIR = pathToSessionDir || PATH_TO_SESSIONS;
+  let sesionFileNames = fs.readdirSync(PATH_TO_SESSION_DIR);
+  let expiresTimeForFile = Date.now() + TWO_DAYS_IN_MS;
+
+  for (let currentSessionFile of sesionFileNames ){
+    let modTimeSessionFile = fs.statSync(`${PATH_TO_SESSION_DIR}${currentSessionFile}`)['mtimeMs'];
+    try{
+      if(modTimeSessionFile < expiresTimeForFile) {
+          fs.unlinkSync(`${PATH_TO_SESSION_DIR}${currentSessionFile}`);
+          console.log(`Old session file ${currentSessionFile} deleted `);
+      }
+    } catch(err){
+      console.error(`Error with deleting old session file ${currentSessionFile}: ${err}`);
+    }
+  }
+}
+
+function deleteEmptySessionDir(pathToSessionDir){
+  sesionFileNames = fs.readdirSync(pathToSessionDir);
+  if (sesionFileNames.length == 0){
+    fs.rmdir(pathToSessionDir, (err) => {
+      if (err) console.error(`Error with delete folder ${pathToSessionDir}: ${err}`);
+      console.log(`Folder ${pathToSessionDir} was deleted`);
+    });
+  }
 }
 
 
