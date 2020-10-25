@@ -1,38 +1,14 @@
 let fs = require('fs');
-const mimeTypes = require('./config/mimeTypes.json');
-const PATH_TO_SESSIONS = "./data/sessions/";
-const TWO_DAYS_IN_MS = 172800000; //172800000 = 2 day * 24 hour * 60 min * 60 s * 1000 ms
-const PATH_TO_PROFILES = "./data/profiles/";
-
-function loadData() {
-  const PATH_TO_FILMS = "./data/films/";
-  const PATH_TO_ARTISTS = "./data/artists/";
-  let filmNames;
-  let artistNames;
-  try {
-    filmNames = fs.readdirSync(PATH_TO_FILMS);
-    artistNames = fs.readdirSync(PATH_TO_ARTISTS);
-    console.log(filmNames, artistNames);
-  } catch (e) {
-    console.log("Проблемки");
-  }
-  let filmInstances = getInstances(filmNames, PATH_TO_FILMS);
-  let artistInstances = getInstances(artistNames, PATH_TO_ARTISTS);
-  return {filmInstances, artistInstances};
-}
-function getInstances(arrayNames, pathToDir) {
-  let arrayInstances = [];
-  for (let instanceName of arrayNames) {
-    let instanceContent = JSON.parse(fs.readFileSync(pathToDir + `${instanceName}`));
-    arrayInstances.push(instanceContent);
-  }
-  return arrayInstances;
-}
-
-
-
+const dbConnect = require('./dbConnect.js');
 const http = require('http');
+const mimeTypes = require('./config/mimeTypes.json');
+const router = require('./router.js');
+
+const PATH_TO_SESSIONS = "./data/sessions/";
+const PATH_TO_PROFILES = "./data/profiles/";
+const TWO_DAYS_IN_MS = 172800000; //172800000 = 2 day * 24 hour * 60 min * 60 s * 1000 ms
 const port = 3000;
+
 const requestHandler = (request, response) => {
 
   if(businessLogicHandler(request, response))  return;
@@ -154,7 +130,7 @@ function collectPostData (request, callback) {
   request.on('end', () => {
     let decodedPostData = decodeURIComponent(postData);
     console.log(`Func collectPostData ${decodedPostData}`);
-    callback(parsePostParams(decodedPostData);
+    callback(parsePostParams(decodedPostData));
     return
   });
 }
@@ -492,47 +468,21 @@ function stopSessionCleaner(idSessionCleaner){
    clearInterval(idSessionCleaner);
    console.log(`Session cleaner was stoped.`);
 }
-
-const server = http.createServer(requestHandler);
-server.listen(port, (err) => {
-    if (err) {
-        return console.log('something bad happened', err);
-    }    console.log(`server is listening on ${port}`)
-})
-
-/*OLD BULLSHIT
-setInterval(() => {
-  if( timeCheckOldSessions < 0) return;
-   timeCheckOldSessions++;
-  if( timeCheckOldSessions >= 60) {
-   timeCheckOldSessions = -1;
-   let sessionDirNames = fs.readdirSync(PATH_TO_SESSIONS);
-   console.log(sessionDirNames);
-   for (let currentSessionDir of sessionDirNames){
-       deleteOldSessionFiles(`${PATH_TO_SESSIONS}${currentSessionDir}/`);
-       deleteEmptySessionDir(`${PATH_TO_SESSIONS}${currentSessionDir}/`);
-   }
-    timeCheckOldSessions = 0;
-  }}, 1000);
-
-
-function getRequestParams(url) {
-  let resultParams = {}
-  let [adress, stringParams] = url.split("?");
-  if (stringParams)
-    for (let keyValue of stringParams.split("&")) {
-      let [key, value] = keyValue.split("=");
-      resultParams[key] = value;
+let server;
+router.rebootHandlers( err => {
+  if(err) {
+    console.log(`Errors with rebooting handlers: ${err}`);
+    process.exit(1);
   }
-  return resultParams;
-}*/
+  console.log('Router ready...');
+  dbConnect.initDB( err => {
+    if(err) process.exit(1);
 
-/*
-function saveData(films, artists) {
-  fs.writeFile('data.json', JSON.stringify({films, artists}), (e) => {
-    if (e) throw err;
-    console.log('The file has been saved!');
-  });
-}
- let loadedData = loadData();
-  saveData(loadedData.filmInstances, loadedData.artistInstances);*/
+    server = http.createServer(router.route);
+    server.listen(port, (err) => {
+        if (err) {
+            return console.log('something bad happened', err);
+        } console.log(`server is listening on ${port}`)
+    });
+  })
+})
