@@ -1,4 +1,6 @@
 const fs = require('fs');
+const fsPromises = fs.promises;
+const sessions = require('./sessions');
 
 module.exports = {
   rebootHandlers,
@@ -7,21 +9,22 @@ module.exports = {
 
 let apiHandlers = [];
 
-function rebootHandlers(callback){
+async function rebootHandlers(){
   let newApiHandlers = [];
   let booted = 0;
   const PATH_TO_HANDLERS = './handlers/';
-  fs.readdir(PATH_TO_HANDLERS, (err, handlersList) => {
-    if(err) callback(err);
+  try {
+    let handlersList = await fsPromises.readdir(PATH_TO_HANDLERS);
     let fullPathToHandler;
     let stat;
+
     handlersList.forEach(handlerName => {
       fullPathToHandler = `${PATH_TO_HANDLERS}${handlerName}`;
       stat = fs.statSync(fullPathToHandler);
       if(stat.isFile()){
-        try{
+        try {
           newApiHandlers.push(require(fullPathToHandler));
-          console.log(`Booted handler: ${handlerName}\n`);
+          console.log(`Booted handler: ${handlerName}`);
         }
         catch(err){
           console.log(`Can't boot handler: ${handlerName}\n ${err}`);
@@ -29,13 +32,15 @@ function rebootHandlers(callback){
       }
       if(++booted == handlersList.length){
         apiHandlers = newApiHandlers;
-        callback(null);
+        return true;
       }
     });
-  });
+  } catch(err){
+    throw err;
+  }
 }
 
-function route(request, response){
+async function route(request, response){
   let requestedUrl = decodeURI(request.url);
   let apiRegExp = new RegExp('^/api', 'g');
   let errorApiResult = {};
@@ -43,36 +48,42 @@ function route(request, response){
   if(!apiRegExp.test(requestedUrl)){
     response.setHeader('Content-Type', 'application/json;');
     response.statusCode = 400;
-    errorApiResult.message = 'Bad request. Try type "/api" in url';
+    errorApiResult.message = 'Bad request. Try type /api in url';
     response.end(JSON.stringify(errorApiResult));
+    return true;
   }
 
-  collectPostData(request, (postData) => {
-    let sessionContext = {};
+  try {
+    let postData = await collectPostData(request);
+    let sessionContext = await sessions.getSessionContext(request, response);
+
     for(let handler of apiHandlers){
       if(handler.urlPatern.test(requestedUrl)){
         handler.handler(request, response, postData, sessionContext);
-        return;
+        return true;
       }
     }
     response.setHeader('Content-Type', 'application/json;');
     response.statusCode = 404;
     errorApiResult.message = 'Not found handler for this url.';
     response.end(JSON.stringify(errorApiResult));
-  });
+  } catch (e) {
+    console.log(`Errors in router: ${e}\n`);
+  }
 }
 
-function collectPostData (request, callback) {
-  let postData = '';
-  request.on('data', (chunk) => {
-    postData += chunk.toString();
-  });
+function collectPostData (request) {
+  return new Promise( (resolve, reject) => {
+    let postData = '';
+    request.on('data', (chunk) => {
+      postData += chunk.toString();
+    });
 
-  request.on('end', () => {
-    let decodedPostData = decodeURIComponent(postData);
-    console.log(`Func collectPostData ${decodedPostData}`);
-    callback(parsePostParams(decodedPostData));
-    return
+    request.on('end', () => {
+      let decodedPostData = decodeURIComponent(postData);
+      console.log(`Func collectPostData ${decodedPostData}`);
+      resolve(parsePostParams(decodedPostData));
+    });
   });
 }
 
