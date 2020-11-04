@@ -1,25 +1,27 @@
-const mongodb = require('mongodb');
-
-const MONGO_URL = 'mongodb://localhost:27017/cm';
-let db = null;
+const MongoClient = require('mongodb').MongoClient;
+const mongoURL = 'mongodb://localhost:27017';
+const dbName = 'cm';
+let db;
 
 module.exports = {
   initDB,
-  getDB(){
+  getDB() {
     return db;
   }
 }
 
-function initDB(callback) {
-  return mongodb.connect(MONGO_URL, (err, connection) => {
-    if(err){
-      console.error('Error with connection to DB');
-      callback(err);
-      return;
-    }
+async function initDB() {
+  const client = new MongoClient(mongoURL);
 
-    console.info('Connection to DB successfully');
-    db = connection;
-    callback(null);
-  })
+  try {
+    await client.connect();
+    db = client.db(dbName);
+
+    const dbMethods = require('./dbMethods.js');
+    let result = await dbMethods.getUserInfo('swenkal');
+    console.log(JSON.stringify(result));
+
+  } catch(err) {
+    throw err;
+  }
 }
