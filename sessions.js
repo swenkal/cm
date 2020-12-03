@@ -3,7 +3,8 @@ const TWO_DAYS_IN_MS = 172800000;
 
 module.exports = {
   generateSession,
-  getSessionContext
+  getSessionContext,
+  deleteUserSession
 }
 async function generateSession(response, postData){
   let sessionCreateTime = Date.now();
@@ -52,7 +53,7 @@ async function getSessionContext(request, response) {
     resultContext.username = userSession.login;
     return resultContext;
   } catch (e) {
-    console.log(`Errors in getSessionContext...`);
+    console.log(`Errors in sessions -> getSessionContext...`);
     throw e;
   }
 
@@ -78,6 +79,20 @@ async function updateUserSession(response, userSession){
     return true;
   } catch(e) {
     console.log(`Errors in sessions -> updateUserSession...`);
+    throw e;
+  }
+}
+
+async function deleteUserSession(request, response){
+  try {
+    let userCookie = parseCookie(request.headers.cookie);
+    let expiresTime = new Date(0).toGMTString();
+    await dbMethods.deleteUserSession(userCookie['token']);
+    console.log(`Session ${userCookie['token']} was deleted!`);
+    response.setHeader("Set-Cookie", `token=''; expires=${expiresTime}`);
+    return true;
+  } catch(e) {
+    console.log(`Errors in sessions -> deleteUserSession...`);
     throw e;
   }
 }
