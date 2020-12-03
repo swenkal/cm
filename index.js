@@ -188,7 +188,7 @@ function authorisation(request, response, postData, sessionContext) {
     }
 
     fs.readFile(`${PATH_TO_PROFILES}${postData.login}.json`,'utf-8', function(err, data){
-      response.setHeader("Content-Type", "application/json");
+
       if (err) {
         response.statusCode = 401;
       } else {
@@ -200,6 +200,7 @@ function authorisation(request, response, postData, sessionContext) {
             response.statusCode = 401;
           }
       }
+      response.setHeader("Content-Type", "application/json");
       response.end(JSON.stringify(resultCheckUser));
     });
 }
@@ -261,7 +262,7 @@ function getDirNameForUserToken(userToken){
 }
 
 function getUserAccount(request, response, postData, sessionContext){
-    resultUserAccount = {};
+    let resultUserAccount = {};
     response.setHeader("Content-Type", "application/json");
     if(!("username" in sessionContext)){
       response.statusCode = 403;
@@ -468,21 +469,27 @@ function stopSessionCleaner(idSessionCleaner){
    clearInterval(idSessionCleaner);
    console.log(`Session cleaner was stoped.`);
 }
+/*
 let server;
-router.rebootHandlers( err => {
-  if(err) {
-    console.log(`Errors with rebooting handlers: ${err}`);
-    process.exit(1);
-  }
-  console.log('Router ready...');
-  dbConnect.initDB( err => {
-    if(err) process.exit(1);
+server = http.createServer(requestHandler);
+server.listen(port, (err) => {
+    if (err) {
+        return console.log('something bad happened', err);
+    } console.log(`server is listening on ${port}`)
+});*/
+let server;
+(async () => {
+  try {
+    await dbConnect.initDB();
+    await router.rebootHandlers();
+    console.log('Router ready...');
 
     server = http.createServer(router.route);
-    server.listen(port, (err) => {
-        if (err) {
-            return console.log('something bad happened', err);
-        } console.log(`server is listening on ${port}`)
-    });
-  })
-})
+    server.listen(port);
+    console.log(`server is listening on ${port}`)
+
+  } catch (err) {
+    console.log(`index Errors: ${err}`);
+    process.exit(1);
+  }
+})();
