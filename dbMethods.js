@@ -3,6 +3,7 @@ const getDB = require('./dbConnect.js').getDB;
 
 module.exports = {
   getUserInfo,
+  getAccountsList,
   createUserAccount,
   updateUserAccount,
   deleteUserAccount,
@@ -21,6 +22,16 @@ async function getUserInfo(login){
     return userInfo;
   } catch(err){
     console.log(`Error in dbMethods -> getUserInfo`);
+    throw err;
+  }
+};
+
+async function getAccountsList(){
+  try {
+    let usersInfo = await getDB().collection('accounts').find().toArray();
+    return usersInfo;
+  } catch(err){
+    console.log(`Error in dbMethods -> getAccountsList`);
     throw err;
   }
 };
@@ -67,14 +78,13 @@ async function getUserSession(userToken){
   return await getDB().collection('sessions').findOne( {_id : userToken} );
 }
 
-async function deleteUserSession(userSession){
-  if( !('_id' in userSession) ) throw new Error('User session not consist "id"');
+async function deleteUserSession(userToken){
 
   try {
-    await getDB().collection('sessions').deleteOne( {_id : userSession._id} );
+    await getDB().collection('sessions').deleteOne( {_id : userToken} );
     return true;
   } catch (e) {
-    console.log(`Error with deleting user session : ${userSession.login}, token: ${userSession._id}`);
+    console.log(`Error dbMethods -> deleteUserSession, token: ${userTokens}`);
     throw e;
   }
 
